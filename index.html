@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<!-- Line 4 — Head section -->
+<head>
+  <meta charset="UTF-8" />
+  <title>MongoDB CRUD</title>
+</head>
+
+<!-- Line 9 — Body shuru -->
+<body>
+
+<!-- Line 11 — Heading -->
+<h1>Student Management — MongoDB Atlas</h1>
+
+<!-- Line 13 — CREATE form -->
+<h2>Add Student</h2>
+<input id="name"   placeholder="Name" />
+<input id="age"    placeholder="Age" type="number" />
+<input id="course" placeholder="Course" />
+<button onclick="addStudent()">Add</button>
+<p id="msg-add"></p>
+
+<hr/>
+
+<!-- Line 22 — READ section -->
+<h2>All Students</h2>
+<button onclick="loadStudents()">Refresh</button>
+<p id="msg-load"></p>
+
+<!-- Line 26 — Table -->
+<table border="1" cellpadding="6">
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Age</th>
+      <th>Course</th>
+      <th>Update</th>
+      <th>Delete</th>
+    </tr>
+  </thead>
+  <tbody id="tbody"></tbody>
+</table>
+
+<!-- Line 40 — JavaScript shuru -->
+<script>
+
+  // Line 42 — Backend ka address
+  var API = "http://localhost:5000/studentdata";
+
+  // Line 44 — CREATE function
+  function addStudent() {
+    var name   = document.getElementById("name").value.trim();
+    var age    = parseInt(document.getElementById("age").value) || 18;
+    var course = document.getElementById("course").value.trim();
+
+    // Line 49 — Validation
+    if (!name || !course) {
+      document.getElementById("msg-add").textContent = "Name aur Course bharo!";
+      return;
+    }
+
+    // Line 54 — Server ko POST request bhejo
+    fetch(API, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name: name, age: age, course: course })
+    })
+    .then(function(res) { return res.json(); })
+    .then(function(data) {
+      // Line 61 — Message dikhao aur inputs saaf karo
+      document.getElementById("msg-add").textContent = data.message;
+      document.getElementById("name").value   = "";
+      document.getElementById("age").value    = "";
+      document.getElementById("course").value = "";
+      loadStudents(); // table refresh karo
+    });
+  }
+
+  // Line 69 — READ function
+  function loadStudents() {
+    fetch(API)
+    .then(function(res) { return res.json(); })
+    .then(function(data) {
+      // Line 73 — Total dikhao
+      document.getElementById("msg-load").textContent = "Total: " + data.length + " students";
+
+      // Line 75 — Table mein rows banao
+      var tbody = document.getElementById("tbody");
+      tbody.innerHTML = data.map(function(s) {
+        return "<tr>" +
+          "<td>" + s.name + "</td>" +
+          "<td>" + s.age  + "</td>" +
+          "<td>" + s.course + "</td>" +
+          "<td><button onclick=\"updateStudent('" + s._id + "')\">Update</button></td>" +
+          "<td><button onclick=\"deleteStudent('" + s._id + "','" + s.name + "')\">Delete</button></td>" +
+        "</tr>";
+      }).join("");
+    });
+  }
+
+  // Line 87 — UPDATE function
+  function updateStudent(id) {
+    var newCourse = prompt("what is the new course ?");
+    var newAge    = prompt("what is the new age?");
+    if (!newCourse && !newAge) return;
+
+    // Line 92 — Server ko PUT request bhejo
+    fetch(API + "/" + id, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ course: newCourse, age: parseInt(newAge) })
+    })
+    .then(function(res) { return res.json(); })
+    .then(function(data) {
+      alert(data.message);
+      loadStudents();
+    });
+  }
+
+  // Line 103 — DELETE function
+  function deleteStudent(id, name) {
+    if (!confirm(name + " has to be deleted?")) return;
+
+    // Line 106 — Server ko DELETE request bhejo
+    fetch(API + "/" + id, { method: "DELETE" })
+    .then(function(res) { return res.json(); })
+    .then(function(data) {
+      alert(data.message);
+      loadStudents();
+    });
+  }
+
+  // Line 113 — Page load hone pe table dikhao
+  loadStudents();
+
+</script>
+
+</body>
+</html>
